@@ -11,11 +11,12 @@ import { DashboardPage } from './pages/DashboardPage';
 import { AdminPage } from './pages/AdminPage';
 import { HomePage } from './pages/HomePage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { NotificationBell } from './components/NotificationBell';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAuth } from './hooks/useAuth';
 import { UserMenu } from './components/UserMenu';
-
+import { MobileBottomNav } from './components/MobileBottomNav';
 
 export default function App() {
   const { user, isAuthenticated, isLoading, login, logout } = useAuth();
@@ -29,7 +30,7 @@ export default function App() {
         <a href="#main" className="skip-link">
           Bỏ qua điều hướng
         </a>
-        <div className="flex min-h-screen flex-col bg-slate-50/50">
+        <div className="flex min-h-screen flex-col bg-slate-50/50 pb-16 sm:pb-0">
           <header className="border-b border-slate-200 bg-white sticky top-0 z-40">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-5 px-6 py-4">
               <div className="flex items-center gap-8">
@@ -40,7 +41,7 @@ export default function App() {
                 >
                   E-LIB<span className="text-blue-500">.</span>
                 </Link>
-                <nav aria-label="Điều hướng chính" className="flex items-center gap-5 text-sm font-medium">
+                <nav aria-label="Điều hướng chính" className="hidden sm:flex items-center gap-5 text-sm font-medium">
                   <NavLink
                     end
                     to="/"
@@ -187,6 +188,7 @@ export default function App() {
               <Route path="/digital-documents" element={<DigitalDocumentsPage />} />
               <Route path="/my-borrows" element={<MyBorrowsPage />} />
               <Route path="/reading-history" element={<ReadingHistoryPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/circulation" element={<CirculationDeskPage />} />
@@ -225,6 +227,7 @@ export default function App() {
               </div>
             </div>
           </footer>
+          <MobileBottomNav />
         </div>
       </BrowserRouter>
     </ErrorBoundary>
