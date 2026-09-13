@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  body { @apply m-0 bg-slate-50 font-sans text-slate-900 antialiased; }
+  :focus-visible { @apply outline outline-2 outline-offset-4 outline-blue-700; }
+  button, a { -webkit-tap-highlight-color: transparent; }
+}
+@layer components {
+  .button { @apply rounded-lg bg-blue-900 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-wait disabled:opacity-50; }
+  .skip-link { @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-white focus:p-3; }
+}
