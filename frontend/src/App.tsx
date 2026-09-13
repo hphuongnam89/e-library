@@ -30,7 +30,7 @@ export default function App() {
         <a href="#main" className="skip-link">
           Bỏ qua điều hướng
         </a>
-        <div className="flex min-h-screen flex-col bg-slate-50/50 pb-16 sm:pb-0">
+        <div className="flex min-h-screen flex-col bg-slate-50/50 pb-20 sm:pb-0">
           <header className="border-b border-slate-200 bg-white sticky top-0 z-40">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-5 px-6 py-4">
               <div className="flex items-center gap-8">
@@ -166,13 +166,15 @@ export default function App() {
                 ) : isAuthenticated && user ? (
                   <>
                     <NotificationBell />
-                    <UserMenu user={user} onLogout={logout} />
+                    <div className="hidden sm:block">
+                      <UserMenu user={user} onLogout={logout} />
+                    </div>
                   </>
                 ) : (
                   <button
                     type="button"
                     onClick={login}
-                    className="rounded-lg bg-blue-900 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800 transition-colors shadow-xs"
+                    className="hidden sm:block rounded-lg bg-blue-900 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800 transition-colors shadow-xs"
                   >
                     Đăng nhập Google
                   </button>
