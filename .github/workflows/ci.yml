@@ -1,0 +1,129 @@
+name: E-LIB CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-test:
+    name: Backend Quality Gate (Java 21 / Spring Boot)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Eclipse Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run Backend Unit & Contract Tests
+        working-directory: ./backend
+        run: |
+          chmod +x ./mvnw
+          ./mvnw -B test "-Dtest=!*IntegrationTest"
+
+      - name: Verify JaCoCo Coverage Report
+        working-directory: ./backend
+        run: |
+          test -f target/jacoco.exec || { echo "JaCoCo exec report missing"; exit 1; }
+          test -d target/site/jacoco || { echo "JaCoCo HTML report missing"; exit 1; }
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-surefire-reports
+          path: backend/target/surefire-reports/
+          retention-days: 7
+
+  frontend-test:
+    name: Frontend Quality Gate (React 18 / Vite / TS)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Check Code Quality & Linting
+        working-directory: ./frontend
+        run: npm run lint
+
+      - name: Run Vitest Suite with Coverage
+        working-directory: ./frontend
+        run: npm test -- --coverage
+
+      - name: Build Production Frontend Bundle
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-report
+          path: frontend/coverage/
+          retention-days: 7
+
+  security-audit:
+    name: Security & Vulnerability Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run NPM Security Audit
+        working-directory: ./frontend
+        run: npm audit --audit-level=high
+
+  docker-build:
+    name: Docker Container Build Verification
+    needs: [backend-test, frontend-test, security-audit]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Backend Container Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: false
+          tags: elib-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Frontend Container Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: false
+          tags: elib-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

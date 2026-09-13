@@ -40,7 +40,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,
                                 "/api/system/health",
                                 "/api/system/health/liveness",
-                                "/api/system/health/readiness").permitAll()
+                                "/api/system/health/readiness",
+                                "/api/system/prometheus").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
@@ -64,8 +65,19 @@ public class SecurityConfig {
                                 "/api/v1/book-copies/**").hasAnyRole("LIBRARIAN", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/me/borrows").authenticated()
                         .requestMatchers("/api/v1/borrows/**").hasAnyRole("LIBRARIAN", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/digital-documents/*/grants").hasAnyRole("LIBRARIAN", "ADMIN")
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/digital-documents",
+                                "/api/v1/digital-documents/*",
+                                "/api/v1/digital-documents/*/stream").authenticated()
+                        .requestMatchers("/api/v1/digital-documents/**").hasAnyRole("LIBRARIAN", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/me/reading-history").authenticated()
+                        .requestMatchers("/api/v1/reading/sessions/**").authenticated()
+                        .requestMatchers("/api/v1/me/notifications/**").authenticated()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/librarian/**").hasAnyRole("LIBRARIAN", "ADMIN")
+                        .requestMatchers("/api/v1/dashboard/**").hasAnyRole("LIBRARIAN", "ADMIN")
+                        .requestMatchers("/api/v1/reports/**").hasAnyRole("LIBRARIAN", "ADMIN")
                         .anyRequest().denyAll()
                 )
                 .sessionManagement(session -> session

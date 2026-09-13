@@ -63,6 +63,13 @@ class FoundationIntegrationTest {
     }
 
     @Test
+    void prometheusMetricsEndpointIsAccessible() {
+        ResponseEntity<String> response = http.getForEntity("/api/system/prometheus", String.class);
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        assertThat(response.getBody()).contains("jvm_memory_used_bytes");
+    }
+
+    @Test
     void privateEndpointsDenyAccessAndReplaceUntrustedRequestId() throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Request-ID", "untrusted-client-value");

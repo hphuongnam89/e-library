@@ -3,6 +3,8 @@ package vn.edu.phuxuan.elib.catalog;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -47,23 +49,19 @@ public class CatalogService {
     @Transactional(readOnly = true)
     public Page<CategoryDto> getCategories(Long parentId, Pageable pageable) {
         if (parentId != null) {
-            List<CategoryDto> list = categoryRepository.findByParentId(parentId).stream()
-                    .map(CategoryDto::from)
-                    .toList();
-            int start = (int) pageable.getOffset();
-            int end = Math.min(start + pageable.getPageSize(), list.size());
-            List<CategoryDto> pagedList = (start <= end) ? list.subList(start, end) : List.of();
-            return new org.springframework.data.domain.PageImpl<>(pagedList, pageable, list.size());
+            return categoryRepository.findByParentId(parentId, pageable).map(CategoryDto::from);
         }
         return categoryRepository.findAll(pageable).map(CategoryDto::from);
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "rootCategories")
     public List<CategoryDto> getRootCategories() {
         return categoryRepository.findByParentIsNull().stream().map(CategoryDto::from).toList();
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "categoryChildren", key = "#parentId")
     public List<CategoryDto> getCategoryChildren(Long parentId) {
         return categoryRepository.findByParentId(parentId).stream().map(CategoryDto::from).toList();
     }
@@ -75,6 +73,7 @@ public class CatalogService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found with id: " + id));
     }
 
+    @CacheEvict(value = {"rootCategories", "categoryChildren"}, allEntries = true)
     public CategoryDto createCategory(CreateCategoryRequest req) {
         Category parent = null;
         if (req.parentId() != null) {
@@ -93,6 +92,7 @@ public class CatalogService {
         return CategoryDto.from(categoryRepository.save(entity));
     }
 
+    @CacheEvict(value = {"rootCategories", "categoryChildren"}, allEntries = true)
     public CategoryDto updateCategory(Long id, UpdateCategoryRequest req) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found with id: " + id));
@@ -135,6 +135,7 @@ public class CatalogService {
         return CategoryDto.from(categoryRepository.save(category));
     }
 
+    @CacheEvict(value = {"rootCategories", "categoryChildren"}, allEntries = true)
     public void deleteCategory(Long id) {
         if (!categoryRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found with id: " + id);

@@ -9,6 +9,11 @@ playwright-report/
 test-results/
 .DS_Store
 *.log
+*.key
+*.bak*
+*.dump
+*.sha256
+backup-drill-artifacts/
 .idea/
 .vscode/
 .codebase-memory/

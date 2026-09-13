@@ -5,7 +5,10 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -52,6 +55,7 @@ public class CirculationService {
 
     // ==================== CHECKOUT ====================
 
+    @CacheEvict(value = "dashboardSummary", allEntries = true)
     public BatchCheckoutResponse checkout(CheckoutRequest req) {
         AppUser user = appUserRepository.findByStudentCode(req.studentCode().trim())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found with student code: " + req.studentCode()));
@@ -69,6 +73,7 @@ public class CirculationService {
 
         List<BorrowDto> resultItems = new ArrayList<>();
         Instant now = Instant.now();
+        Map<Long, BorrowingPolicy> policyCache = new HashMap<>();
 
         for (String barcode : req.barcodes()) {
             BookCopy copy = bookCopyRepository.findByBarcodeForUpdate(barcode.trim())
@@ -78,9 +83,10 @@ public class CirculationService {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Book copy with barcode '" + barcode + "' is not available for borrowing (status: " + copy.getStatus() + ")");
             }
 
-            BorrowingPolicy policy = borrowingPolicyRepository
-                    .findFirstByLibraryIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(copy.getLibrary().getId(), now)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No active borrowing policy found for library: " + copy.getLibrary().getName()));
+            Long libraryId = copy.getLibrary().getId();
+            BorrowingPolicy policy = policyCache.computeIfAbsent(libraryId, id -> borrowingPolicyRepository
+                    .findFirstByLibraryIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(id, now)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No active borrowing policy found for library: " + copy.getLibrary().getName())));
 
             if (policy.getMaxActiveLoans() != null && (activeLoans + resultItems.size() + 1) > policy.getMaxActiveLoans()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Borrowing limit exceeded. Maximum active loans permitted: " + policy.getMaxActiveLoans());
@@ -100,6 +106,7 @@ public class CirculationService {
 
     // ==================== RETURN ====================
 
+    @CacheEvict(value = "dashboardSummary", allEntries = true)
     public BorrowDto returnBorrow(Long borrowId) {
         Borrow borrow = borrowRepository.findById(borrowId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Borrow record not found with id: " + borrowId));
@@ -113,6 +120,7 @@ public class CirculationService {
         borrow.setReturnedAt(now);
         borrow.setStatus(BorrowStatus.RETURNED);
 
+        // Fine calculation: daily_fine * max(0, days_overdue)
         if (now.isAfter(borrow.getDueAt())) {
             long overdueDays = ChronoUnit.DAYS.between(
                     borrow.getDueAt().atZone(ZoneOffset.UTC).toLocalDate(),
@@ -127,6 +135,7 @@ public class CirculationService {
             borrow.setFineAmount(BigDecimal.ZERO);
         }
 
+        // Restore copy status
         BookCopy copy = borrow.getBookCopy();
         copy.setStatus(BookCopyStatus.AVAILABLE);
         bookCopyRepository.save(copy);
@@ -136,6 +145,7 @@ public class CirculationService {
 
     // ==================== FINE PAYMENT ====================
 
+    @CacheEvict(value = "dashboardSummary", allEntries = true)
     public BorrowDto payFine(Long borrowId) {
         Borrow borrow = borrowRepository.findById(borrowId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Borrow record not found with id: " + borrowId));

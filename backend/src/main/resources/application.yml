@@ -69,19 +69,22 @@ spring:
         enabled: false
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      max-file-size: 50MB
+      max-request-size: 50MB
 
 elib:
   auth:
     allowed-domains: ${ALLOWED_DOMAINS:}
     frontend-url: ${FRONTEND_URL:http://127.0.0.1:5173}
+  storage:
+    local-dir: ${STORAGE_LOCAL_DIR:./data/storage}
+    max-file-size-bytes: 52428800
 management:
   endpoints:
     web:
       base-path: /api/system
       exposure:
-        include: health
+        include: health, prometheus
   endpoint:
     health:
       show-details: never

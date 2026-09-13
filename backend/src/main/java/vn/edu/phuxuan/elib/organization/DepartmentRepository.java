@@ -14,4 +14,6 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
     Page<Department> findByLibraryId(Long libraryId, Pageable pageable);
 
     boolean existsByLibraryId(Long libraryId);
+
+    java.util.Optional<Department> findByNameIgnoreCase(String name);
 }

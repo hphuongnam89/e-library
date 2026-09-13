@@ -1,6 +1,8 @@
 package vn.edu.phuxuan.elib.catalog;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -8,6 +10,8 @@ import org.springframework.stereotype.Repository;
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     List<Category> findByParentId(Long parentId);
+
+    Page<Category> findByParentId(Long parentId, Pageable pageable);
 
     List<Category> findByParentIsNull();
 
