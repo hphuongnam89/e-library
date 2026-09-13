@@ -44,7 +44,33 @@ assert "token" in json.loads(csrf_body)
 me_body, me_headers = request("/api/v1/auth/me", 401)
 assert "application/problem+json" in me_headers["Content-Type"]
 assert json.loads(me_body)["requestId"] == me_headers["X-Request-ID"]
-print("PASS: live readiness, deep link, unauthorized JSON, CSRF, and Phase 2 auth endpoints")
+# Phase 3 — Organization endpoints
+inst_body, inst_headers = request("/api/v1/institutions", 401)
+assert "application/problem+json" in inst_headers["Content-Type"]
+assert json.loads(inst_body)["requestId"] == inst_headers["X-Request-ID"]
+request("/api/v1/institutions", 403, "POST")
+# Phase 4 — Catalog endpoints
+cat_body, cat_headers = request("/api/v1/categories", 401)
+assert "application/problem+json" in cat_headers["Content-Type"]
+assert json.loads(cat_body)["requestId"] == cat_headers["X-Request-ID"]
+request("/api/v1/categories", 403, "POST")
+titles_body, titles_headers = request("/api/v1/book-titles", 401)
+assert "application/problem+json" in titles_headers["Content-Type"]
+assert json.loads(titles_body)["requestId"] == titles_headers["X-Request-ID"]
+request("/api/v1/book-titles", 403, "POST")
+copies_body, copies_headers = request("/api/v1/book-copies", 401)
+assert "application/problem+json" in copies_headers["Content-Type"]
+assert json.loads(copies_body)["requestId"] == copies_headers["X-Request-ID"]
+request("/api/v1/book-copies", 403, "POST")
+# Phase 5 — Circulation endpoints
+borrows_body, borrows_headers = request("/api/v1/borrows", 401)
+assert "application/problem+json" in borrows_headers["Content-Type"]
+assert json.loads(borrows_body)["requestId"] == borrows_headers["X-Request-ID"]
+request("/api/v1/borrows", 403, "POST")
+me_borrows_body, me_borrows_headers = request("/api/v1/me/borrows", 401)
+assert "application/problem+json" in me_borrows_headers["Content-Type"]
+assert json.loads(me_borrows_body)["requestId"] == me_borrows_headers["X-Request-ID"]
+print("PASS: live readiness, deep link, unauthorized JSON, CSRF, Phase 2 auth, Phase 3 org, Phase 4 catalog, and Phase 5 circulation endpoints")
 
 if args.check_outages:
     for service in ("redis", "db"):

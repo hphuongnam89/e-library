@@ -54,6 +54,16 @@ public class SecurityConfig {
                                 "/api/v1/campuses/**",
                                 "/api/v1/libraries/**",
                                 "/api/v1/departments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/categories/**",
+                                "/api/v1/book-titles/**",
+                                "/api/v1/book-copies/**").authenticated()
+                        .requestMatchers(
+                                "/api/v1/categories/**",
+                                "/api/v1/book-titles/**",
+                                "/api/v1/book-copies/**").hasAnyRole("LIBRARIAN", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/me/borrows").authenticated()
+                        .requestMatchers("/api/v1/borrows/**").hasAnyRole("LIBRARIAN", "ADMIN")
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/librarian/**").hasAnyRole("LIBRARIAN", "ADMIN")
                         .anyRequest().denyAll()

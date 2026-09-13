@@ -81,10 +81,15 @@ public class AuthController {
     }
 
     @GetMapping("/csrf")
-    public Map<String, String> csrf(CsrfToken csrfToken) {
+    public Map<String, String> csrf(CsrfToken csrfToken, jakarta.servlet.http.HttpServletResponse response) {
         if (csrfToken == null) {
             return Map.of();
         }
+        jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("XSRF-TOKEN", csrfToken.getToken());
+        cookie.setPath("/");
+        cookie.setHttpOnly(false);
+        response.addCookie(cookie);
+
         return Map.of(
                 "parameterName", csrfToken.getParameterName(),
                 "headerName", csrfToken.getHeaderName(),
